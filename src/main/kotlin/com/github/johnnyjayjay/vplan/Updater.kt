@@ -4,6 +4,7 @@ import com.github.johnnyjayjay.vplan.format.phrase
 import com.github.johnnyjayjay.vplan.schedule.Schedule
 import me.ivmg.telegram.Bot
 import me.ivmg.telegram.network.fold
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.collections.ArrayList
@@ -11,23 +12,28 @@ import kotlin.concurrent.fixedRateTimer
 
 private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("eeee, dd.MM.yyy", Locale.GERMAN)
 
-class Updater(private val connector: HomepageConnector, private val bot: Bot) {
+class Updater(private val connector: HomepageConnector) {
 
+    var bot: Bot? = null
     private var timer: Timer? = null
-    private var currentSchedules = connector.loadSchedules()
+    private var currentSchedules = emptyList<Schedule>()
 
     fun startAutomaticUpdates() {
+        log("Starting automatic updates")
         timer = fixedRateTimer(period = PERIOD.toLong(), action = task@{
+            log("Fetching schedules")
             val newSchedules = connector.loadSchedules()
             if (newSchedules == currentSchedules)
                 return@task
 
+            log("New schedules")
             val updates = ArrayList<Schedule>()
-            for (index in (if (newSchedules.size > currentSchedules.size) currentSchedules else newSchedules).indices) {
-                val (newSchedule, oldSchedule) = newSchedules[index] to currentSchedules[index]
+            for (index in newSchedules.indices) {
+                val (newSchedule, oldSchedule) = newSchedules[index] to (if (currentSchedules.size > index) currentSchedules[index] else Schedule.EMPTY)
                 updates.add(differenceSchedule(oldSchedule, newSchedule))
             }
             subscribers().forEach { notify(it, updates) }
+            currentSchedules = newSchedules
         })
     }
 
@@ -42,8 +48,8 @@ class Updater(private val connector: HomepageConnector, private val bot: Bot) {
                                     || it.fullGrade == grade.toString()
                                     || (!it.hasGrade && receiveGeneralNotifications)
                         }.map { phrase(it) }.joinToString("\n\n")
-                        bot.sendMessage(chatId = chatId, text = "${formatter.format(schedule.date)}:\n${if (message.isEmpty()) "Keine Einträge!" else message}")
-                                .fold { it.exception?.printStackTrace() }
+                        bot?.sendMessage(chatId = chatId, text = "${formatter.format(schedule.date)}:\n${if (message.isEmpty()) "Keine Einträge!" else message}")
+                                ?.fold { it.exception?.printStackTrace() }
                     }
         }
     }

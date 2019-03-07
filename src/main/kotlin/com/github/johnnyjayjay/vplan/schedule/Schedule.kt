@@ -38,6 +38,7 @@ class Schedule constructor(private val substitutions: Collection<Substitution>, 
 
     companion object {
 
+        val EMPTY = Schedule(emptyList(), LocalDate.MIN)
         val columns: Array<String> = arrayOf("Kl.", "Std.", "Fach", "Raum", "VLehrer", "VFach", "VRaum", "Info")
         val dateParser = DateTimeFormatter.ofPattern("eeee dd.MM.yyyy", Locale.GERMAN)
 
