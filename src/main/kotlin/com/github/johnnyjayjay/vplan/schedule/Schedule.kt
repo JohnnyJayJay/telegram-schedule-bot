@@ -3,6 +3,7 @@ package com.github.johnnyjayjay.vplan.schedule
 import org.jsoup.nodes.Document
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.*
 
 class Schedule constructor(private val substitutions: Collection<Substitution>, val date: LocalDate) : Collection<Substitution> {
@@ -44,7 +45,11 @@ class Schedule constructor(private val substitutions: Collection<Substitution>, 
 
         fun parse(html: Document): Schedule {
             val dateSection = html.select("h2")
-            val date = LocalDate.parse(dateSection.text(), dateParser)
+            val date = try {
+                LocalDate.parse(dateSection.text(), dateParser)
+            } catch (e: DateTimeParseException) {
+                return EMPTY
+            }
             val table = html.select("table")
 
             if (table.isEmpty())

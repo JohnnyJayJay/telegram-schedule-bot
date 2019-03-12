@@ -21,7 +21,6 @@ class Updater(private val connector: HomepageConnector) {
     fun startAutomaticUpdates() {
         log("Starting automatic updates")
         timer = fixedRateTimer(period = PERIOD.toLong(), action = task@{
-            log("Fetching schedules")
             val newSchedules = connector.loadSchedules()
             if (newSchedules == currentSchedules)
                 return@task
